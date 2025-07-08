@@ -1,14 +1,32 @@
-import api from './axiosConfig';
+import axios from 'axios';
+
+// Define the product request payload
+interface ProductRequest {
+  name: string;
+  sku: string;
+  categoryId: number;
+  status: string;
+  price: number;
+  discount: number;
+}
 
 // Fetch all products
-export const fetchProducts = () => api.get('/products');
+export const fetchProducts = () => {
+  return axios.get('http://localhost:8080/api/products');
+};
 
 // Delete a product by ID
-export const deleteProduct = (id: number) => api.delete(`/products/${id}`);
+export const deleteProduct = (id: number) => {
+  return axios.delete(`http://localhost:8080/api/products/${id}`);
+};
 
-// Update product by ID
-export const updateProduct = (id: number, data: any) => api.put(`/products/${id}`, data);
+// Update product details
+export const updateProduct = (id: number, data: ProductRequest) => {
+  return axios.put(`http://localhost:8080/api/products/${id}`, data);
+};
 
-// Apply discount to all products in a category
+
+
 export const applyDiscountToCategory = (categoryId: number, discount: number) =>
-  api.put(`/products/discount/${categoryId}?discount=${discount}`);
+  axios.put(`http://localhost:8081/api/products/category/${categoryId}/discount`, { discount });
+

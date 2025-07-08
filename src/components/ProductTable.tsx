@@ -18,8 +18,13 @@ const ProductTable = () => {
   const [editingId, setEditingId] = useState<number | null>(null);
   const [editValues, setEditValues] = useState<Partial<Product>>({});
 
+  const loadProducts = async () => {
+    const res = await fetchProducts();
+    setProducts(res.data);
+  };
+
   useEffect(() => {
-    fetchProducts().then((res) => setProducts(res.data));
+    loadProducts();
   }, []);
 
   const handleDelete = async (id: number) => {
@@ -40,22 +45,26 @@ const ProductTable = () => {
   };
 
   const handleSave = async () => {
-    if (editingId !== null) {
-      const original = products.find((p) => p.productId === editingId);
-      const updated = {
-        name: editValues.name || original?.name,
-        sku: editValues.sku || original?.sku,
-        categoryId: original?.categoryId ?? 1,
-        status: original?.status ?? 'Active',
-        price: Number(editValues.price ?? original?.price ?? 0),
-        discount: Number(editValues.discount ?? original?.discount ?? 0)
-      };
-      await updateProduct(editingId, updated);
-      const res = await fetchProducts();
-      setProducts(res.data);
-      setEditingId(null);
-    }
-  };
+  if (editingId !== null) {
+    const original = products.find((p) => p.productId === editingId);
+
+    if (!original) return;
+
+    const updated = {
+      name: editValues.name ?? original.name,
+      sku: editValues.sku ?? original.sku,
+      categoryId: original.categoryId,
+      status: original.status,
+      price: Number(editValues.price ?? original.price),
+      discount: Number(editValues.discount ?? original.discount)
+    };
+
+    await updateProduct(editingId, updated);
+    await loadProducts();
+    setEditingId(null);
+  }
+};
+
 
   return (
     <table className="product-table">
@@ -76,7 +85,11 @@ const ProductTable = () => {
             <td>{product.categoryName}</td>
             <td>
               {editingId === product.productId ? (
-                <input name="name" value={editValues.name || ''} onChange={handleInputChange} />
+                <input
+                  name="name"
+                  value={editValues.name || ''}
+                  onChange={handleInputChange}
+                />
               ) : (
                 product.name
               )}
@@ -84,14 +97,22 @@ const ProductTable = () => {
             <td>{product.sku || '-'}</td>
             <td>
               {editingId === product.productId ? (
-                <input name="price" value={editValues.price?.toString() || ''} onChange={handleInputChange} />
+                <input
+                  name="price"
+                  value={editValues.price?.toString() || ''}
+                  onChange={handleInputChange}
+                />
               ) : (
                 product.price
               )}
             </td>
             <td>
               {editingId === product.productId ? (
-                <input name="discount" value={editValues.discount?.toString() || ''} onChange={handleInputChange} />
+                <input
+                  name="discount"
+                  value={editValues.discount?.toString() || ''}
+                  onChange={handleInputChange}
+                />
               ) : (
                 product.discount
               )}

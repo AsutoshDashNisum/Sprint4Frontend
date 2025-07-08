@@ -1,64 +1,60 @@
-    import React, { useState, useEffect } from 'react';
-    import { getAllCategories } from '../api/categoryApi';
+import React, { useState, useEffect } from 'react';
+import { getAllCategories } from '../api/categoryApi';
+import { applyDiscountToCategory } from '../api/productApi';
 
-    import { applyDiscountToCategory } from '../api/productApi';
+interface DiscountModalProps {
+  onClose: () => void;
+  onSuccess: () => void;
+}
 
-    interface DiscountModalProps {
-    onClose: () => void;
+const DiscountModal: React.FC<DiscountModalProps> = ({ onClose, onSuccess }) => {
+  const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState('');
+  const [discount, setDiscount] = useState('');
+
+  useEffect(() => {
+    getAllCategories().then((res) => setCategories(res.data));
+  }, []);
+
+  const handleSubmit = async () => {
+    if (!selectedCategory || !discount) return alert('Please select category and enter discount');
+    try {
+      await applyDiscountToCategory(Number(selectedCategory), Number(discount));
+      onSuccess();
+    } catch (err) {
+      console.error('Error applying discount:', err);
     }
+  };
 
-    const DiscountModal: React.FC<DiscountModalProps> = ({ onClose }) => {
-    const [categories, setCategories] = useState<any[]>([]);
-    const [selectedCategory, setSelectedCategory] = useState('');
-    const [discount, setDiscount] = useState('');
-
-    useEffect(() => {
-  getAllCategories().then((res: { data: any[] }) => setCategories(res.data));
-}, []);
-
-
-    const handleSubmit = () => {
-        if (!selectedCategory || !discount) return alert('Select category and discount');
-
-        applyDiscountToCategory(Number(selectedCategory), Number(discount))
-        .then(() => {
-            alert('Discount applied successfully');
-            onClose();
-            window.location.reload(); // Refresh to fetch updated products
-        })
-        .catch((err: unknown) => {
-    if (err instanceof Error) {
-        console.error(err.message);
-    } else {
-        console.error('An unknown error occurred:', err);
-    }
-    });
-    ;
-    };
-
-    return (
-        <div className="modal-backdrop">
-        <div className="modal">
-            <h3>Apply Discount</h3>
-            <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
+  return (
+    <div className="promo-modal">
+      <div className="promo-modal-content">
+        <button className="close-button" onClick={onClose}>X</button>
+        <div className="create-promo">
+          <h2>Apply Category Discount</h2>
+          <label>Category:</label>
+          <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)} required>
             <option value="">Select Category</option>
             {categories.map((cat) => (
-                <option key={cat.categoryId} value={cat.categoryId}>
+              <option key={cat.categoryId} value={cat.categoryId}>
                 {cat.categoryName}
-                </option>
+              </option>
             ))}
-            </select>
-            <input
+          </select>
+
+          <label>Discount (%):</label>
+          <input
             type="number"
-            placeholder="Discount %"
             value={discount}
             onChange={(e) => setDiscount(e.target.value)}
-            />
-            <button onClick={handleSubmit}>Apply</button>
-            <button onClick={onClose}>Close</button>
-        </div>
-        </div>
-    );
-    };
+            required
+          />
 
-    export default DiscountModal;
+          <button onClick={handleSubmit}>Apply Discount</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default DiscountModal;

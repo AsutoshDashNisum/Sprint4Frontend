@@ -13,11 +13,13 @@ const Dashboard = () => {
   const [isDiscountModalOpen, setIsDiscountModalOpen] = useState(false);
   const [isPromoModalOpen, setIsPromoModalOpen] = useState(false);
 
-  // Promo form states
   const [promoCode, setPromoCode] = useState('');
   const [promoType, setPromoType] = useState('');
   const [description, setDescription] = useState('');
   const [amount, setAmount] = useState('');
+
+  const [promoRefreshTrigger, setPromoRefreshTrigger] = useState(0);
+  const [productRefreshTrigger, setProductRefreshTrigger] = useState(0);
 
   useEffect(() => {
     dispatch(fetchCategories());
@@ -42,7 +44,6 @@ const Dashboard = () => {
 
   const handleCreatePromo = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
       await dispatch(
         createPromo({
@@ -53,10 +54,16 @@ const Dashboard = () => {
         })
       );
       await dispatch(fetchPromos());
+      setPromoRefreshTrigger(prev => prev + 1);
       handleClosePromoModal();
     } catch (err) {
       console.error('Promo creation failed:', err);
     }
+  };
+
+  const handleDiscountApplied = () => {
+    setProductRefreshTrigger(prev => prev + 1); // To reload products in ProductTable
+    setIsDiscountModalOpen(false);
   };
 
   return (
@@ -73,7 +80,7 @@ const Dashboard = () => {
         </button>
       </div>
 
-      <ProductTable />
+      <ProductTable key={productRefreshTrigger} />
 
       <div className="excel-buttons">
         <button>IMPORT EXCEL</button>
@@ -86,14 +93,12 @@ const Dashboard = () => {
         </button>
       </div>
 
-      <PromoTable />
+      <PromoTable key={promoRefreshTrigger} />
 
-      {/* Discount Modal */}
       {isDiscountModalOpen && (
-        <DiscountModal onClose={handleCloseDiscountModal} />
+        <DiscountModal onClose={handleCloseDiscountModal} onSuccess={handleDiscountApplied} />
       )}
 
-      {/* Promo Code Modal */}
       {isPromoModalOpen && (
         <div className="promo-modal">
           <div className="promo-modal-content">
@@ -108,7 +113,6 @@ const Dashboard = () => {
                   onChange={e => setPromoCode(e.target.value)}
                   required
                 />
-
                 <label>Promo Type:</label>
                 <select
                   value={promoType}
@@ -119,14 +123,12 @@ const Dashboard = () => {
                   <option value="Discount">Discount</option>
                   <option value="Flat">Flat</option>
                 </select>
-
                 <label>Description:</label>
                 <textarea
                   value={description}
                   onChange={e => setDescription(e.target.value)}
                   rows={3}
                 ></textarea>
-
                 <label>Amount:</label>
                 <input
                   type="number"
@@ -134,7 +136,6 @@ const Dashboard = () => {
                   onChange={e => setAmount(e.target.value)}
                   required
                 />
-
                 <button type="submit">Create Promo</button>
               </form>
             </div>
