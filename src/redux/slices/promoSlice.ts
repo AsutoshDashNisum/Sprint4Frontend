@@ -9,7 +9,7 @@ interface Promo {
   amount: number;
 }
 
-// Define the state type
+// State type
 interface PromoState {
   data: Promo[];
   status: 'idle' | 'loading' | 'succeeded' | 'failed';
@@ -20,16 +20,37 @@ const initialState: PromoState = {
   status: 'idle'
 };
 
-// ✅ Define and export only once
+// 🔁 Fetch promos
 export const fetchPromos = createAsyncThunk('promo/fetch', async () => {
   const res = await axios.get('http://localhost:8080/api/promos');
-  return res.data;
+  return res.data.map((promo: any) => ({
+    promoCode: promo.promoCode,
+    promoType: promo.promo_type,
+    description: promo.description,
+    amount: promo.amount
+  }));
 });
 
-export const createPromo = createAsyncThunk('promo/create', async (promoData: Promo) => {
-  const res = await axios.post('http://localhost:8080/api/promos', promoData);
-  return res.data;
-});
+// 🆕 Create promo
+export const createPromo = createAsyncThunk(
+  'promo/create',
+  async (promoData: Promo) => {
+    const payload = {
+      promoCode: promoData.promoCode,
+      promo_type: promoData.promoType, // Backend expects this key
+      description: promoData.description,
+      amount: promoData.amount
+    };
+    const res = await axios.post('http://localhost:8080/api/promos', payload);
+    const created = res.data;
+    return {
+      promoCode: created.promoCode,
+      promoType: created.promo_type,
+      description: created.description,
+      amount: created.amount
+    };
+  }
+);
 
 const promoSlice = createSlice({
   name: 'promo',
@@ -37,8 +58,15 @@ const promoSlice = createSlice({
   reducers: {},
   extraReducers: builder => {
     builder
+      .addCase(fetchPromos.pending, state => {
+        state.status = 'loading';
+      })
       .addCase(fetchPromos.fulfilled, (state, action) => {
         state.data = action.payload;
+        state.status = 'succeeded';
+      })
+      .addCase(fetchPromos.rejected, state => {
+        state.status = 'failed';
       })
       .addCase(createPromo.fulfilled, (state, action) => {
         state.data.push(action.payload);
@@ -46,5 +74,4 @@ const promoSlice = createSlice({
   }
 });
 
-// ✅ Do not re-export functions here again
 export default promoSlice.reducer;
